@@ -9,3 +9,4 @@ USING PYTHON: <br>
 &emsp; pip install uvicorn<br>
 &emsp; pip install python-dotenv<br>
 &emsp; pip install requests<br>
+&emsp; pip install python-multipart<br>
