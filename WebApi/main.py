@@ -5,7 +5,7 @@ import motor.motor_asyncio
 app = FastAPI() 
 
 # Connect to Mongo Atlas 
-client = motor.motor_asyncio.AsyncIOMotorClient("your_mongo_connection_string") 
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://AdminIsTator:McastGaming@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment") 
 db = client.multimedia_db 
 
 class PlayerScore(BaseModel): 
