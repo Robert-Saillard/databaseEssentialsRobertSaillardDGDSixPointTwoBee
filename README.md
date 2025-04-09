@@ -1,7 +1,7 @@
 # databaseEssentialsRobertSaillardDGDSixPointTwoBee
 
 Database is hosted on MONGODBATLAS <br>
-API is called on PYTHON <br>
+API is made using PYTHON with POST GET PUT DELETE functionality <br>
 <br>
 USING PYTHON: <br>
 &emsp; pip install fastapi<br>
@@ -11,3 +11,4 @@ USING PYTHON: <br>
 &emsp; pip install python-dotenv<br>
 &emsp; pip install requests<br>
 &emsp; pip install python-multipart<br>
+&emsp; pip install pymongo<br>
