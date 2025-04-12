@@ -4,11 +4,15 @@ from pydantic import BaseModel
 from typing import List
 from bson import ObjectId
 import motor.motor_asyncio
+import re
+
 
 app = FastAPI()
 
 with open("password.dat", "r") as f:
-    username, password = f[0].strip().split(":")
+    line = f.readline()  # Read the first line from the password file
+    username, password = line.strip().split(":")
+    
     # MongoDB connection setup using Motor (async MongoDB driver)
     client = motor.motor_asyncio.AsyncIOMotorClient(
         f"mongodb+srv://{username}:{password}@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment"
@@ -35,6 +39,13 @@ async def upload_sprite(file: UploadFile = File(...)):
     The file is stored in the database with its filename and binary content.
     '''
     content = await file.read()  # Read binary content of uploaded file
+    
+    # Validate file content and type
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if not file.filename.endswith(('.png', '.jpg', '.jpeg')):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
     sprite_doc = {"filename": file.filename, "content": content}  # Construct document
     result = await db.sprites.insert_one(sprite_doc)  # Insert into 'sprites' collection
     return {"message": "Sprite uploaded", "id": str(result.inserted_id)}  # Return confirmation and ID
@@ -77,6 +88,13 @@ async def update_sprite(sprite_id: str, file: UploadFile = File(...)):
     The new file replaces the existing one in the database.
     '''
     content = await file.read()  # Read new binary content
+
+    # Validate file content and type
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if not file.filename.endswith(('.png', '.jpg', '.jpeg')):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
     update_result = await db.sprites.update_one(
         {"_id": ObjectId(sprite_id)},  # Match by ObjectId
         {"$set": {"filename": file.filename, "content": content}}  # Replace with new data
@@ -105,6 +123,13 @@ async def upload_audio(file: UploadFile = File(...)):
     The file is stored in the database with its filename and binary content.
     '''
     content = await file.read()  # Read binary data
+
+    # Validate file content and type
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if not file.filename.endswith(('.mp3', '.wav', '.ogg')):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
     audio_doc = {"filename": file.filename, "content": content}  # Create document
     result = await db.audio.insert_one(audio_doc)  # Insert into 'audio' collection
     return {"message": "Audio file uploaded", "id": str(result.inserted_id)}
@@ -133,6 +158,7 @@ async def get_audio(audio_id: str):
     audio = await db.audio.find_one({"_id": ObjectId(audio_id)})  # Find audio by ObjectId
     if not audio:
         raise HTTPException(status_code=404, detail="Audio file not found")
+
     return {
         "id": str(audio["_id"]),
         "filename": audio["filename"],
@@ -146,6 +172,13 @@ async def update_audio(audio_id: str, file: UploadFile = File(...)):
     The new file replaces the existing one in the database.
     '''
     content = await file.read()
+
+    # Validate file content and type
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if not file.filename.endswith(('.mp3', '.wav', '.ogg')):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
     update_result = await db.audio.update_one(
         {"_id": ObjectId(audio_id)},
         {"$set": {"filename": file.filename, "content": content}}
@@ -167,13 +200,25 @@ async def delete_audio(audio_id: str):
 
 # ------------------ PLAYER SCORE ENDPOINTS ------------------
 
-@app.post("/player_score")  # Endpoint to add a new player score
+@app.post("/upload_player_score")  # Endpoint to add a new player score
 async def add_score(score: PlayerScore):
     '''
     Add a new player score to the database.
     The score includes the player's name and their score.
     '''
     score_doc = score.dict()  # Convert Pydantic model to dictionary
+
+    # Validate score value
+    if not score_doc["player_name"]:
+        raise HTTPException(status_code=400, detail="Player name is required")
+    if not isinstance(score_doc["score"], int):
+        raise HTTPException(status_code=400, detail="Score must be an integer")
+    if score_doc["score"] < 0:
+        raise HTTPException(status_code=400, detail="Score must be non-negative")
+
+    #Cleanup player name to remove special characters
+    score_doc["player_name"] = re.sub(r'[^a-zA-Z0-9 ]', '', score_doc["player_name"])
+
     result = await db.scores.insert_one(score_doc)  # Insert into 'scores' collection
     return {"message": "Score recorded", "id": str(result.inserted_id)}
 
@@ -191,6 +236,7 @@ async def get_score(score_id: str):
     '''
     Retrieve a specific player score by its ID.
     '''
+
     score = await db.scores.find_one({"_id": ObjectId(score_id)})  # Query by ObjectId
     if not score:
         raise HTTPException(status_code=404, detail="Score not found")
@@ -202,12 +248,27 @@ async def update_score(score_id: str, score: PlayerScore):
     Update a player score by its ID.
     The new score replaces the existing one in the database.
     '''
+    
+    # Validate score value
+    if not score.player_name:
+        raise HTTPException(status_code=400, detail="Player name is required")
+    if not isinstance(score.score, int):
+        raise HTTPException(status_code=400, detail="Score must be an integer")
+    if score.score < 0:
+        raise HTTPException(status_code=400, detail="Score must be non-negative")
+    
+    score_dict = score.dict()  # Convert Pydantic model to dictionary
+
+    #Cleanup player name to remove special characters
+    score_dict["player_name"] = re.sub(r'[^a-zA-Z0-9 ]', '', score_dict["player_name"])
+
     update_result = await db.scores.update_one(
         {"_id": ObjectId(score_id)},  # Match score by ID
-        {"$set": score.dict()}  # Apply updated score data
+        {"$set": score_dict}  # Apply updated score data
     )
     if update_result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Score not found")
+    
     return {"message": "Score updated"}
 
 @app.delete("/player_score/{score_id}")  # Endpoint to delete a score by ID
