@@ -7,10 +7,13 @@ import motor.motor_asyncio
 
 app = FastAPI()
 
-# MongoDB connection setup using Motor (async MongoDB driver)
-client = motor.motor_asyncio.AsyncIOMotorClient(
-    "mongodb+srv://AdminIsTator:McastGaming@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment"
-)
+with open("password.dat", "r") as f:
+    username, password = f[0].strip().split(":")
+    # MongoDB connection setup using Motor (async MongoDB driver)
+    client = motor.motor_asyncio.AsyncIOMotorClient(
+        f"mongodb+srv://{username}:{password}@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment"
+    )
+
 db = client.multimedia_db  # Database reference
 
 class PlayerScore(BaseModel):  # Pydantic model for validating player score input
