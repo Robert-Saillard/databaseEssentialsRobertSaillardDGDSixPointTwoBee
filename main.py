@@ -9,7 +9,7 @@ import re
 
 app = FastAPI()
 
-with open("password.dat", "r") as f:
+with open("password.txt", "r") as f:
     line = f.readline()  # Read the first line from the password file
     username, password = line.strip().split(":")
     
