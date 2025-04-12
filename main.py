@@ -1,18 +1,19 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import List
-from bson import ObjectId
-import motor.motor_asyncio
-import re
+from fastapi import FastAPI, File, UploadFile, HTTPException, status # Import necessary FastAPI components
+from fastapi.responses import JSONResponse # Import JSON response for custom error handling
+from pydantic import BaseModel # Import Pydantic for data validation
+from typing import List # Import List for type hinting
+from bson import ObjectId # Import ObjectId for MongoDB document IDs
+import motor.motor_asyncio # Import Motor for async MongoDB operations
+import re # Import regex for string cleanup
 
-app = FastAPI()
+app = FastAPI() # Create FastAPI instance
 
+# Load MongoDB credentials from a file and connect to the database
 with open("password.txt", "r") as f:
     line = f.readline()  # Read the first line from the password file
-    username, password = line.strip().split(":")
+    username, password = line.strip().split(":") # Split the line into username and password
     
-    # MongoDB connection setup using Motor (async MongoDB driver)
+    # MongoDB connection setup using Motor (async MongoDB driver) using retrieved credentials
     client = motor.motor_asyncio.AsyncIOMotorClient(
         f"mongodb+srv://{username}:{password}@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment"
     )
@@ -47,6 +48,7 @@ async def upload_sprite(file: UploadFile = File(...)):
     
     sprite_doc = {"filename": file.filename, "content": content}  # Construct document
     result = await db.sprites.insert_one(sprite_doc)  # Insert into 'sprites' collection
+    
     return {"message": "Sprite uploaded", "id": str(result.inserted_id)}  # Return confirmation and ID
 
 @app.get("/sprites")  # Endpoint to fetch all sprites' metadata
@@ -56,6 +58,7 @@ async def get_all_sprites():
     Returns a list of metadata for each sprite.
     '''
     sprites = await db.sprites.find().to_list(None)  # Fetch all sprite documents
+
     return [
         {
             "id": str(sprite["_id"]),  # Convert ObjectId to string
@@ -74,6 +77,7 @@ async def get_sprite(sprite_id: str):
     sprite = await db.sprites.find_one({"_id": ObjectId(sprite_id)})  # Query by ObjectId
     if not sprite:
         raise HTTPException(status_code=404, detail="Sprite not found")  # Error if not found
+    
     return {
         "id": str(sprite["_id"]),
         "filename": sprite["filename"],
@@ -100,6 +104,7 @@ async def update_sprite(sprite_id: str, file: UploadFile = File(...)):
     )
     if update_result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Sprite not found")
+    
     return {"message": "Sprite updated"}  # Confirm update
 
 @app.delete("/sprite/{sprite_id}")  # Endpoint to delete a sprite by ID
@@ -111,6 +116,7 @@ async def delete_sprite(sprite_id: str):
     delete_result = await db.sprites.delete_one({"_id": ObjectId(sprite_id)})  # Delete by ObjectId
     if delete_result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Sprite not found")
+    
     return {"message": "Sprite deleted"}  # Confirm deletion
 
 # ------------------ AUDIO ENDPOINTS ------------------
@@ -131,6 +137,7 @@ async def upload_audio(file: UploadFile = File(...)):
     
     audio_doc = {"filename": file.filename, "content": content}  # Create document
     result = await db.audio.insert_one(audio_doc)  # Insert into 'audio' collection
+    
     return {"message": "Audio file uploaded", "id": str(result.inserted_id)}
 
 @app.get("/audios")  # Endpoint to get metadata for all audio files
