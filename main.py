@@ -9,18 +9,15 @@ import re
 
 app = FastAPI()
 
-# with open("password.txt", "r") as f:
-#     line = f.readline()  # Read the first line from the password file
-#     username, password = line.strip().split(":")
+with open("password.txt", "r") as f:
+    line = f.readline()  # Read the first line from the password file
+    username, password = line.strip().split(":")
     
-#     # MongoDB connection setup using Motor (async MongoDB driver)
-#     client = motor.motor_asyncio.AsyncIOMotorClient(
-#         f"mongodb+srv://{username}:{password}@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment"
-#     )
+    # MongoDB connection setup using Motor (async MongoDB driver)
+    client = motor.motor_asyncio.AsyncIOMotorClient(
+        f"mongodb+srv://{username}:{password}@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment"
+    )
 
-# MongoDB connection setup using Motor (async MongoDB driver)
-client = motor.motor_asyncio.AsyncIOMotorClient(
-    f"mongodb+srv://APIuser:ILoveDatabaseEssentials@databaseassignment.3bdhqj5.mongodb.net/?retryWrites=true&w=majority&appName=DatabaseAssignment")
 db = client.multimedia_db  # Database reference
 
 class PlayerScore(BaseModel):  # Pydantic model for validating player score input
